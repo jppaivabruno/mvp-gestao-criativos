@@ -1,0 +1,970 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>MVP - Gestão Profissional de Criativos</title>
+
+  <!-- Tailwind (CDN) -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Heroicons (cdn) -->
+  <script src="https://unpkg.com/feather-icons"></script>
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+  <style>
+    /* small custom styles for nicer scrollbar and transitions */
+    :root { --glass: rgba(255,255,255,0.03); }
+    body { font-feature-settings: "ss01" 1; }
+    .scrollbar-thin::-webkit-scrollbar { height: 8px; width: 8px; }
+    .scrollbar-thin::-webkit-scrollbar-thumb { background: rgba(99,102,241,0.20); border-radius: 8px; }
+    .card-anim { transition: transform .12s ease, box-shadow .12s ease; }
+    .card-anim:hover { transform: translateY(-6px); box-shadow: 0 20px 40px rgba(2,6,23,0.18); }
+  </style>
+</head>
+<body class="bg-gray-50 text-slate-800 antialiased">
+
+  <div class="min-h-screen flex">
+
+    <!-- SIDEBAR -->
+    <aside class="w-80 hidden lg:flex flex-col bg-white border-r border-gray-200">
+      <div class="px-6 py-6 flex items-center gap-3">
+        <div class="w-10 h-10 bg-indigo-600 rounded flex items-center justify-center text-white font-bold">GC</div>
+        <div>
+          <div class="text-lg font-semibold">Gestão de Criativos</div>
+          <div class="text-xs text-gray-500">Workspace · MVP</div>
+        </div>
+      </div>
+
+      <nav class="mt-4 px-4 flex-1">
+        <ul class="space-y-1">
+          <li>
+            <button data-section="dashboard" class="group w-full flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium text-slate-700 hover:bg-indigo-50">
+              <svg class="w-5 h-5 text-indigo-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3v18h18"/></svg>
+              Dashboard
+            </button>
+          </li>
+          <li>
+            <button data-section="offers" class="group w-full flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium text-slate-700 hover:bg-indigo-50">
+              <svg class="w-5 h-5 text-indigo-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c2.21 0 4-1.79 4-4S14.21 0 12 0 8 1.79 8 4s1.79 4 4 4zM6 20v-2a4 4 0 0 1 4-4h0"/></svg>
+              Ofertas
+            </button>
+          </li>
+          <li>
+            <button data-section="ads" class="group w-full flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium text-slate-700 hover:bg-indigo-50">
+              <svg class="w-5 h-5 text-indigo-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7h18M3 12h18M3 17h18"/></svg>
+              Criativos
+            </button>
+          </li>
+          <li>
+            <button data-section="settings" class="group w-full flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium text-slate-700 hover:bg-indigo-50">
+              <svg class="w-5 h-5 text-indigo-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3"/></svg>
+              Configurações
+            </button>
+          </li>
+        </ul>
+
+        <div class="mt-8">
+          <div class="text-xs font-semibold text-gray-500 px-3">Minhas Ofertas</div>
+          <div id="sideOffers" class="mt-2 flex flex-col gap-2 px-3"></div>
+        </div>
+      </nav>
+
+      <div class="px-6 py-4 border-t border-gray-100">
+        <div class="text-xs text-gray-500">Exportar / Importar</div>
+        <div class="mt-2 flex gap-2">
+          <button id="exportBtn" class="flex-1 px-3 py-2 bg-white border rounded text-sm text-indigo-600 hover:bg-indigo-50">Exportar JSON</button>
+          <label class="px-3 py-2 bg-indigo-600 text-white rounded text-sm cursor-pointer">
+            Import
+            <input id="importFile" type="file" accept="application/json" class="hidden">
+          </label>
+        </div>
+      </div>
+    </aside>
+
+    <!-- MAIN -->
+    <div class="flex-1 flex flex-col">
+
+      <!-- TOPBAR -->
+      <header class="w-full bg-white border-b border-gray-200">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div class="flex items-center justify-between h-16">
+            <div class="flex items-center gap-4">
+              <button id="menuBtn" class="lg:hidden p-2 rounded-md hover:bg-gray-100">
+                <svg class="w-6 h-6 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
+              </button>
+
+              <div class="hidden sm:flex items-center gap-4">
+                <div>
+                  <div class="text-sm text-gray-500">Workspace</div>
+                  <div class="text-lg font-semibold">Audizen — Gestão de Criativos</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="flex items-center gap-3">
+              <div class="hidden md:flex items-center bg-gray-100 rounded-lg px-3 py-2 gap-2">
+                <svg class="w-5 h-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6"/></svg>
+                <input id="searchInput" class="bg-transparent outline-none text-sm" placeholder="Buscar criativos..." />
+              </div>
+
+              <button id="btnAddCreative" class="inline-flex items-center gap-2 bg-indigo-600 text-white px-4 py-2 rounded-lg shadow">
+                <svg class="w-4 h-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                Adicionar Criativo
+              </button>
+
+              <div class="flex items-center gap-3">
+                <div class="h-9 w-9 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center font-medium">B</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <!-- CONTENT -->
+      <main class="p-6 max-w-7xl mx-auto w-full flex-1 overflow-y-auto">
+        <!-- Dashboard Section -->
+        <section id="dashboardSection">
+          <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <!-- Left: Top Cards -->
+            <div class="lg:col-span-2 space-y-6">
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                <div class="p-5 bg-white rounded-lg border card-anim">
+                  <div class="flex items-center justify-between">
+                    <div>
+                      <div class="text-xs text-gray-500">Melhor CTR</div>
+                      <div id="bestCtrName" class="text-lg font-semibold">—</div>
+                    </div>
+                    <div class="text-indigo-600 font-semibold" id="bestCtrVal">—</div>
+                  </div>
+                </div>
+
+                <div class="p-5 bg-white rounded-lg border card-anim">
+                  <div class="flex items-center justify-between">
+                    <div>
+                      <div class="text-xs text-gray-500">Menor CPC</div>
+                      <div id="bestCpcName" class="text-lg font-semibold">—</div>
+                    </div>
+                    <div class="text-indigo-600 font-semibold" id="bestCpcVal">—</div>
+                  </div>
+                </div>
+
+                <div class="p-5 bg-white rounded-lg border card-anim">
+                  <div class="flex items-center justify-between">
+                    <div>
+                      <div class="text-xs text-gray-500">Melhor Hook</div>
+                      <div id="bestHookName" class="text-lg font-semibold">—</div>
+                    </div>
+                    <div class="text-indigo-600 font-semibold" id="bestHookVal">—</div>
+                  </div>
+                </div>
+
+                <div class="p-5 bg-white rounded-lg border card-anim">
+                  <div class="flex items-center justify-between">
+                    <div>
+                      <div class="text-xs text-gray-500">Mais Vendas</div>
+                      <div id="bestSalesName" class="text-lg font-semibold">—</div>
+                    </div>
+                    <div class="text-indigo-600 font-semibold" id="bestSalesVal">—</div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Table Card -->
+              <div class="bg-white rounded-lg border overflow-hidden">
+                <div class="flex items-center justify-between px-5 py-4 border-b">
+                  <div>
+                    <h3 class="text-lg font-semibold">Criativos</h3>
+                    <p class="text-sm text-gray-500">Lista de anúncios e suas métricas agregadas</p>
+                  </div>
+
+                  <div class="flex items-center gap-3">
+                    <select id="filterOffer" class="border rounded px-3 py-2 text-sm">
+                      <!-- dynamic -->
+                    </select>
+
+                    <select id="filterStatus" class="border rounded px-3 py-2 text-sm">
+                      <option value="">Todos os status</option>
+                      <option value="A Testar">A Testar</option>
+                      <option value="Em Teste">Em Teste</option>
+                      <option value="Validado">Validado</option>
+                      <option value="Não Validado">Não Validado</option>
+                    </select>
+                    <button id="clearFilters" class="text-sm text-gray-500 px-3 py-2 hover:bg-gray-50 rounded">Limpar</button>
+                  </div>
+                </div>
+
+                <div class="overflow-auto">
+                  <table class="min-w-full text-sm">
+                    <thead class="bg-gray-50 sticky top-0">
+                      <tr>
+                        <th class="px-4 py-3 text-left">Nome</th>
+                        <th class="px-4 py-3 text-left">Oferta</th>
+                        <th class="px-4 py-3 text-left cursor-pointer" data-key="ctr">CTR</th>
+                        <th class="px-4 py-3 text-left cursor-pointer" data-key="cpm">CPM</th>
+                        <th class="px-4 py-3 text-left cursor-pointer" data-key="cpc">CPC</th>
+                        <th class="px-4 py-3 text-left cursor-pointer" data-key="ic">IC</th>
+                        <th class="px-4 py-3 text-left cursor-pointer" data-key="vendas">Vendas</th>
+                        <th class="px-4 py-3 text-left cursor-pointer" data-key="hook">Hook</th>
+                        <th class="px-4 py-3 text-right">Ações</th>
+                      </tr>
+                    </thead>
+                    <tbody id="adsTable" class="divide-y">
+                      <!-- rows dynamic -->
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+            </div>
+
+            <!-- Right: Quick Add + Top Ads -->
+            <aside class="space-y-6">
+              <div class="bg-white rounded-lg border p-5">
+                <div class="flex items-start justify-between">
+                  <div>
+                    <div class="text-sm text-gray-500">Adicionar Rápido</div>
+                    <div class="mt-2">
+                      <input id="quickName" class="w-full border rounded px-3 py-2 text-sm" placeholder="Nome do criativo (ex: AD01H01)">
+                      <select id="quickStatus" class="mt-2 w-full border rounded px-3 py-2 text-sm">
+                        <option>A Testar</option><option>Em Teste</option><option>Validado</option><option>Não Validado</option>
+                      </select>
+                      <select id="quickOffer" class="mt-2 w-full border rounded px-3 py-2 text-sm"></select>
+                      <button id="quickAddBtn" class="mt-3 w-full bg-indigo-600 text-white rounded py-2">Adicionar</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="bg-white rounded-lg border p-5">
+                <div class="text-sm text-gray-500">Top Ads (por CTR)</div>
+                <ol id="topAdsList" class="mt-3 space-y-2 text-sm"></ol>
+              </div>
+
+            </aside>
+          </div>
+        </section>
+
+        <!-- OFFERS / ADS / SETTINGS sections (hidden by default, show when clicked in sidebar) -->
+        <section id="offersSection" class="hidden mt-8">
+          <div class="bg-white rounded-lg p-6 border">
+            <div class="flex items-center justify-between">
+              <h3 class="text-lg font-semibold">Ofertas</h3>
+              <button id="addOfferBtn" class="px-3 py-2 bg-indigo-600 text-white rounded">+ Nova Oferta</button>
+            </div>
+
+            <div class="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4" id="offersGrid">
+              <!-- cards -->
+            </div>
+          </div>
+        </section>
+
+        <section id="adsSection" class="hidden mt-8">
+          <div class="bg-white rounded-lg p-6 border">
+            <h3 class="text-lg font-semibold">Todos os Criativos</h3>
+            <div class="mt-4" id="allAdsGrid"></div>
+          </div>
+        </section>
+
+        <section id="settingsSection" class="hidden mt-8">
+          <div class="bg-white rounded-lg p-6 border">
+            <h3 class="text-lg font-semibold">Configurações</h3>
+            <p class="text-sm text-gray-500 mt-2">Opções do MVP (dados locais)</p>
+            <div class="mt-4">
+              <button id="resetBtn" class="px-3 py-2 bg-red-100 text-red-600 rounded">Resetar Dados (local)</button>
+            </div>
+          </div>
+        </section>
+
+      </main>
+    </div>
+  </div>
+
+  <!-- MODAL ADD / EDIT CREATIVE -->
+  <div id="modalCreative" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/40 p-4">
+    <div class="bg-white rounded-lg shadow-lg w-full max-w-2xl overflow-auto">
+      <div class="px-6 py-4 border-b flex items-center justify-between">
+        <h4 id="modalCreativeTitle" class="text-lg font-semibold">Adicionar Criativo</h4>
+        <button id="closeModalCreative" class="text-gray-500 hover:text-gray-700">Fechar ✖</button>
+      </div>
+
+      <form id="creativeForm" class="p-6 space-y-4">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label class="text-sm text-gray-600">Nome do Criativo</label>
+            <input id="formName" class="mt-1 w-full border rounded px-3 py-2" placeholder="AD01H01" required>
+          </div>
+          <div>
+            <label class="text-sm text-gray-600">Status</label>
+            <select id="formStatus" class="mt-1 w-full border rounded px-3 py-2">
+              <option>A Testar</option><option>Em Teste</option><option>Validado</option><option>Não Validado</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="text-sm text-gray-600">Oferta</label>
+            <select id="formOffer" class="mt-1 w-full border rounded px-3 py-2"></select>
+          </div>
+
+          <div>
+            <label class="text-sm text-gray-600">CTR (%)</label>
+            <input id="formCTR" class="mt-1 w-full border rounded px-3 py-2" inputmode="decimal" placeholder="ex: 3.5">
+          </div>
+
+          <div>
+            <label class="text-sm text-gray-600">CPM</label>
+            <input id="formCPM" class="mt-1 w-full border rounded px-3 py-2" inputmode="decimal" placeholder="ex: 12.5">
+          </div>
+
+          <div>
+            <label class="text-sm text-gray-600">CPC</label>
+            <input id="formCPC" class="mt-1 w-full border rounded px-3 py-2" inputmode="decimal" placeholder="ex: 0.45">
+          </div>
+
+          <div>
+            <label class="text-sm text-gray-600">IC</label>
+            <input id="formIC" class="mt-1 w-full border rounded px-3 py-2" inputmode="decimal" placeholder="ex: 2.5">
+          </div>
+
+          <div>
+            <label class="text-sm text-gray-600">Vendas</label>
+            <input id="formSales" class="mt-1 w-full border rounded px-3 py-2" inputmode="numeric" placeholder="ex: 100">
+          </div>
+
+          <div>
+            <label class="text-sm text-gray-600">Hook</label>
+            <input id="formHook" class="mt-1 w-full border rounded px-3 py-2" placeholder="ex: A melhor forma de..." required>
+          </div>
+
+          <div class="sm:col-span-2">
+            <label class="text-sm text-gray-600">Link do Criativo</label>
+            <input id="formLink" class="mt-1 w-full border rounded px-3 py-2" type="url" placeholder="https://exemplo.com/criativo1" required>
+          </div>
+
+          <div class="sm:col-span-2">
+            <label class="text-sm text-gray-600">Observações</label>
+            <textarea id="formNotes" class="mt-1 w-full border rounded px-3 py-2" rows="3"></textarea>
+          </div>
+        </div>
+
+        <div class="flex justify-end gap-3">
+          <button type="button" id="deleteCreativeBtn" class="px-4 py-2 bg-red-100 text-red-600 rounded">Excluir</button>
+          <button type="submit" class="px-4 py-2 bg-indigo-600 text-white rounded">Salvar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL ADD / EDIT OFFER -->
+  <div id="modalOffer" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/40 p-4">
+    <div class="bg-white rounded-lg shadow-lg w-full max-w-md">
+      <div class="px-6 py-4 border-b flex items-center justify-between">
+        <h4 id="modalOfferTitle" class="text-lg font-semibold">Adicionar Oferta</h4>
+        <button id="closeModalOffer" class="text-gray-500 hover:text-gray-700">Fechar ✖</button>
+      </div>
+
+      <form id="offerForm" class="p-6 space-y-4">
+        <div>
+          <label class="text-sm text-gray-600">Nome da Oferta</label>
+          <input id="offerName" class="mt-1 w-full border rounded px-3 py-2" placeholder="Minha Oferta" required>
+        </div>
+        <div>
+          <label class="text-sm text-gray-600">Link da Oferta</label>
+          <input id="offerLink" class="mt-1 w-full border rounded px-3 py-2" type="url" placeholder="https://exemplo.com/oferta" required>
+        </div>
+        <div class="flex justify-end gap-3">
+          <button type="button" id="deleteOfferBtn" class="px-4 py-2 bg-red-100 text-red-600 rounded">Excluir</button>
+          <button type="submit" class="px-4 py-2 bg-indigo-600 text-white rounded">Salvar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    const $ = q => document.querySelector(q);
+    const $$ = q => document.querySelectorAll(q);
+
+    const DB_KEY = 'creative_management_mvp';
+    let db = { creatives: [], offers: [] };
+
+    // Load from localStorage
+    function loadDB() {
+      const data = localStorage.getItem(DB_KEY);
+      if (data) {
+        db = JSON.parse(data);
+      }
+    }
+
+    // Save to localStorage
+    function saveDB() {
+      localStorage.setItem(DB_KEY, JSON.stringify(db));
+    }
+
+    // --- UI Elements ---
+    const menuBtn = $('#menuBtn');
+    const sidebar = $('aside');
+    const sections = $$('main section');
+    const sidebarButtons = $$('aside button[data-section]');
+
+    const dashboardSection = $('#dashboardSection');
+    const offersSection = $('#offersSection');
+    const adsSection = $('#adsSection');
+    const settingsSection = $('#settingsSection');
+
+    const bestCtrName = $('#bestCtrName');
+    const bestCtrVal = $('#bestCtrVal');
+    const bestCpcName = $('#bestCpcName');
+    const bestCpcVal = $('#bestCpcVal');
+    const bestHookName = $('#bestHookName');
+    const bestHookVal = $('#bestHookVal');
+    const bestSalesName = $('#bestSalesName');
+    const bestSalesVal = $('#bestSalesVal');
+
+    const filterOffer = $('#filterOffer');
+    const filterStatus = $('#filterStatus');
+    const clearFilters = $('#clearFilters');
+    const adsTable = $('#adsTable');
+
+    const quickName = $('#quickName');
+    const quickStatus = $('#quickStatus');
+    const quickOffer = $('#quickOffer');
+    const quickAddBtn = $('#quickAddBtn');
+    const topAdsList = $('#topAdsList');
+
+    const addOfferBtn = $('#addOfferBtn');
+    const offersGrid = $('#offersGrid');
+    const allAdsGrid = $('#allAdsGrid');
+    const resetBtn = $('#resetBtn');
+
+    const modalCreative = $('#modalCreative');
+    const closeModalCreative = $('#closeModalCreative');
+    const modalCreativeTitle = $('#modalCreativeTitle');
+    const creativeForm = $('#creativeForm');
+    const formName = $('#formName');
+    const formStatus = $('#formStatus');
+    const formOffer = $('#formOffer');
+    const formCTR = $('#formCTR');
+    const formCPM = $('#formCPM');
+    const formCPC = $('#formCPC');
+    const formIC = $('#formIC');
+    const formSales = $('#formSales');
+    const formHook = $('#formHook');
+    const formLink = $('#formLink');
+    const formNotes = $('#formNotes');
+    const deleteCreativeBtn = $('#deleteCreativeBtn');
+
+    const modalOffer = $('#modalOffer');
+    const closeModalOffer = $('#closeModalOffer');
+    const modalOfferTitle = $('#modalOfferTitle');
+    const offerForm = $('#offerForm');
+    const offerName = $('#offerName');
+    const offerLink = $('#offerLink');
+    const deleteOfferBtn = $('#deleteOfferBtn');
+
+    const searchInput = $('#searchInput');
+    const btnAddCreative = $('#btnAddCreative');
+    const exportBtn = $('#exportBtn');
+    const importFile = $('#importFile');
+
+    let currentCreativeId = null;
+    let currentOfferId = null;
+
+    // --- Functions ---
+
+    function showSection(sectionId) {
+      sections.forEach(section => {
+        if (section.id === sectionId + 'Section') {
+          section.classList.remove('hidden');
+        } else {
+          section.classList.add('hidden');
+        }
+      });
+      sidebarButtons.forEach(button => {
+        if (button.dataset.section === sectionId) {
+          button.classList.add('bg-indigo-100');
+        } else {
+          button.classList.remove('bg-indigo-100');
+        }
+      });
+      if (window.innerWidth < 1024) {
+        sidebar.classList.add('hidden');
+      }
+      updateUI();
+    }
+
+    function updateUI() {
+      updateDashboard();
+      renderAdsTable();
+      renderOffersGrid();
+      renderAllAdsGrid();
+      populateOfferSelects();
+      renderTopAds();
+    }
+
+    function updateDashboard() {
+      const validatedCreatives = db.creatives.filter(c => c.status === 'Validado');
+
+      // Best CTR
+      const bestCtr = validatedCreatives.reduce((prev, current) => (current.ctr > prev.ctr) ? current : prev, { ctr: -1 });
+      if (bestCtr.ctr !== -1) {
+        bestCtrName.textContent = bestCtr.name;
+        bestCtrVal.textContent = `${bestCtr.ctr}%`;
+      } else {
+        bestCtrName.textContent = '—';
+        bestCtrVal.textContent = '—';
+      }
+
+      // Lowest CPC
+      const bestCpc = validatedCreatives.reduce((prev, current) => (current.cpc < prev.cpc && current.cpc > 0) ? current : prev, { cpc: Infinity });
+      if (bestCpc.cpc !== Infinity) {
+        bestCpcName.textContent = bestCpc.name;
+        bestCpcVal.textContent = `R$ ${bestCpc.cpc.toFixed(2)}`;
+      } else {
+        bestCpcName.textContent = '—';
+        bestCpcVal.textContent = '—';
+      }
+
+      // Best Hook
+      const bestHook = validatedCreatives.reduce((prev, current) => (current.sales > prev.sales) ? current : prev, { sales: -1 });
+      if (bestHook.sales !== -1) {
+        bestHookName.textContent = bestHook.hook;
+        bestHookVal.textContent = `${bestHook.sales} vendas`;
+      } else {
+        bestHookName.textContent = '—';
+        bestHookVal.textContent = '—';
+      }
+
+      // Most Sales
+      const bestSales = validatedCreatives.reduce((prev, current) => (current.sales > prev.sales) ? current : prev, { sales: -1 });
+      if (bestSales.sales !== -1) {
+        bestSalesName.textContent = bestSales.name;
+        bestSalesVal.textContent = `${bestSales.sales} vendas`;
+      } else {
+        bestSalesName.textContent = '—';
+        bestSalesVal.textContent = '—';
+      }
+    }
+
+    function renderAdsTable() {
+      let filteredAds = db.creatives;
+
+      const selectedOffer = filterOffer.value;
+      if (selectedOffer) {
+        filteredAds = filteredAds.filter(ad => ad.offerId === selectedOffer);
+      }
+
+      const selectedStatus = filterStatus.value;
+      if (selectedStatus) {
+        filteredAds = filteredAds.filter(ad => ad.status === selectedStatus);
+      }
+
+      const searchTerm = searchInput.value.toLowerCase();
+      if (searchTerm) {
+        filteredAds = filteredAds.filter(ad => 
+          ad.name.toLowerCase().includes(searchTerm) ||
+          ad.hook.toLowerCase().includes(searchTerm) ||
+          (db.offers.find(o => o.id === ad.offerId)?.name || '').toLowerCase().includes(searchTerm)
+        );
+      }
+
+      // Sort by selected column
+      const currentSortKey = adsTable.dataset.sortKey || 'name';
+      const currentSortOrder = adsTable.dataset.sortOrder || 'asc';
+
+      filteredAds.sort((a, b) => {
+        let valA = a[currentSortKey];
+        let valB = b[currentSortKey];
+
+        if (typeof valA === 'string') valA = valA.toLowerCase();
+        if (typeof valB === 'string') valB = valB.toLowerCase();
+
+        if (valA < valB) return currentSortOrder === 'asc' ? -1 : 1;
+        if (valA > valB) return currentSortOrder === 'asc' ? 1 : -1;
+        return 0;
+      });
+
+      adsTable.innerHTML = '';
+      if (filteredAds.length === 0) {
+        adsTable.innerHTML = '<tr><td colspan="9" class="text-center py-4 text-gray-500">Nenhum criativo encontrado.</td></tr>';
+        return;
+      }
+
+      filteredAds.forEach(ad => {
+        const offerName = db.offers.find(o => o.id === ad.offerId)?.name || 'N/A';
+        const row = document.createElement('tr');
+        row.className = 'hover:bg-gray-50';
+        row.innerHTML = `
+          <td class="px-4 py-3 font-medium">${ad.name}</td>
+          <td class="px-4 py-3">${offerName}</td>
+          <td class="px-4 py-3">${ad.ctr ? ad.ctr + '%' : '—'}</td>
+          <td class="px-4 py-3">${ad.cpm ? 'R$ ' + ad.cpm.toFixed(2) : '—'}</td>
+          <td class="px-4 py-3">${ad.cpc ? 'R$ ' + ad.cpc.toFixed(2) : '—'}</td>
+          <td class="px-4 py-3">${ad.ic ? ad.ic + '%' : '—'}</td>
+          <td class="px-4 py-3">${ad.sales || '—'}</td>
+          <td class="px-4 py-3">${ad.hook}</td>
+          <td class="px-4 py-3 text-right">
+            <button data-id="${ad.id}" class="edit-creative-btn text-indigo-600 hover:text-indigo-900">Editar</button>
+          </td>
+        `;
+        adsTable.appendChild(row);
+      });
+
+      $$('.edit-creative-btn').forEach(button => {
+        button.onclick = (e) => openCreativeModalForEdit(e.target.dataset.id);
+      });
+
+      // Update sort indicators
+      $$('th[data-key]').forEach(th => {
+        th.classList.remove('text-indigo-600');
+        th.innerHTML = th.innerHTML.split('<svg')[0]; // Remove existing icon
+        if (th.dataset.key === currentSortKey) {
+          th.classList.add('text-indigo-600');
+          const icon = currentSortOrder === 'asc' ? '&#9650;' : '&#9660;'; // Up or Down arrow
+          th.innerHTML += `<svg class="inline-block w-3 h-3 ml-1" fill="currentColor" viewBox="0 0 20 20"><path d="M${currentSortOrder === 'asc' ? '5 12l5-5 5 5z' : '5 8l5 5 5-5z'}"/></svg>`;
+        }
+      });
+    }
+
+    function renderOffersGrid() {
+      offersGrid.innerHTML = '';
+      if (db.offers.length === 0) {
+        offersGrid.innerHTML = '<div class="col-span-full text-center py-4 text-gray-500">Nenhuma oferta encontrada.</div>';
+        return;
+      }
+      db.offers.forEach(offer => {
+        const card = document.createElement('div');
+        card.className = 'bg-gray-50 rounded-lg p-4 border card-anim';
+        card.innerHTML = `
+          <h4 class="font-semibold">${offer.name}</h4>
+          <p class="text-sm text-gray-500 truncate">${offer.link}</p>
+          <div class="mt-3 flex justify-end">
+            <button data-id="${offer.id}" class="edit-offer-btn text-indigo-600 hover:text-indigo-900">Editar</button>
+          </div>
+        `;
+        offersGrid.appendChild(card);
+      });
+
+      $$('.edit-offer-btn').forEach(button => {
+        button.onclick = (e) => openOfferModalForEdit(e.target.dataset.id);
+      });
+
+      // Update sidebar offers
+      const sideOffers = $('#sideOffers');
+      sideOffers.innerHTML = '';
+      db.offers.forEach(offer => {
+        const offerLink = document.createElement('a');
+        offerLink.href = offer.link;
+        offerLink.target = '_blank';
+        offerLink.className = 'text-sm text-gray-600 hover:text-indigo-600';
+        offerLink.textContent = offer.name;
+        sideOffers.appendChild(offerLink);
+      });
+    }
+
+    function renderAllAdsGrid() {
+      allAdsGrid.innerHTML = '';
+      if (db.creatives.length === 0) {
+        allAdsGrid.innerHTML = '<div class="text-center py-4 text-gray-500">Nenhum criativo encontrado.</div>';
+        return;
+      }
+      db.creatives.forEach(ad => {
+        const offerName = db.offers.find(o => o.id === ad.offerId)?.name || 'N/A';
+        const card = document.createElement('div');
+        card.className = 'bg-white rounded-lg p-4 border mb-4 card-anim';
+        card.innerHTML = `
+          <div class="flex items-center justify-between">
+            <h4 class="font-semibold">${ad.name}</h4>
+            <span class="text-xs px-2 py-1 rounded-full ${ad.status === 'Validado' ? 'bg-green-100 text-green-800' : ad.status === 'Em Teste' ? 'bg-yellow-100 text-yellow-800' : 'bg-gray-100 text-gray-800'}">${ad.status}</span>
+          </div>
+          <p class="text-sm text-gray-500">Oferta: ${offerName}</p>
+          <p class="text-sm text-gray-700 mt-2">Hook: ${ad.hook}</p>
+          <div class="mt-3 text-sm">
+            <p>CTR: ${ad.ctr ? ad.ctr + '%' : '—'}</p>
+            <p>CPM: ${ad.cpm ? 'R$ ' + ad.cpm.toFixed(2) : '—'}</p>
+            <p>CPC: ${ad.cpc ? 'R$ ' + ad.cpc.toFixed(2) : '—'}</p>
+            <p>IC: ${ad.ic ? ad.ic + '%' : '—'}</p>
+            <p>Vendas: ${ad.sales || '—'}</p>
+          </div>
+          <div class="mt-3 flex justify-end gap-2">
+            <a href="${ad.link}" target="_blank" class="text-indigo-600 hover:text-indigo-900">Ver Criativo</a>
+            <button data-id="${ad.id}" class="edit-creative-btn text-indigo-600 hover:text-indigo-900">Editar</button>
+          </div>
+        `;
+        allAdsGrid.appendChild(card);
+      });
+
+      $$('.edit-creative-btn').forEach(button => {
+        button.onclick = (e) => openCreativeModalForEdit(e.target.dataset.id);
+      });
+    }
+
+    function populateOfferSelects() {
+      const offerSelects = [filterOffer, quickOffer, formOffer];
+      offerSelects.forEach(select => {
+        select.innerHTML = '';
+        if (select.id === 'filterOffer') {
+          const allOption = document.createElement('option');
+          allOption.value = '';
+          allOption.textContent = 'Todas as Ofertas';
+          select.appendChild(allOption);
+        }
+        db.offers.forEach(offer => {
+          const option = document.createElement('option');
+          option.value = offer.id;
+          option.textContent = offer.name;
+          select.appendChild(option);
+        });
+      });
+    }
+
+    function renderTopAds() {
+      const topAds = [...db.creatives].sort((a, b) => (b.ctr || 0) - (a.ctr || 0)).slice(0, 5);
+      topAdsList.innerHTML = '';
+      if (topAds.length === 0) {
+        topAdsList.innerHTML = '<li class="text-gray-500">Nenhum criativo para exibir.</li>';
+        return;
+      }
+      topAds.forEach(ad => {
+        const li = document.createElement('li');
+        li.className = 'flex items-center justify-between';
+        li.innerHTML = `
+          <span>${ad.name}</span>
+          <span class="font-semibold text-indigo-600">${ad.ctr ? ad.ctr + '%' : '—'}</span>
+        `;
+        topAdsList.appendChild(li);
+      });
+    }
+
+    function openCreativeModalForAdd() {
+      modalCreativeTitle.textContent = 'Adicionar Criativo';
+      creativeForm.reset();
+      currentCreativeId = null;
+      deleteCreativeBtn.classList.add('hidden');
+      modalCreative.classList.remove('hidden');
+      modalCreative.classList.add('flex');
+    }
+
+    function openCreativeModalForEdit(id) {
+      const creative = db.creatives.find(c => c.id === id);
+      if (!creative) return;
+
+      modalCreativeTitle.textContent = 'Editar Criativo';
+      currentCreativeId = id;
+      formName.value = creative.name;
+      formStatus.value = creative.status;
+      formOffer.value = creative.offerId;
+      formCTR.value = creative.ctr;
+      formCPM.value = creative.cpm;
+      formCPC.value = creative.cpc;
+      formIC.value = creative.ic;
+      formSales.value = creative.sales;
+      formHook.value = creative.hook;
+      formLink.value = creative.link;
+      formNotes.value = creative.notes;
+      deleteCreativeBtn.classList.remove('hidden');
+      modalCreative.classList.remove('hidden');
+      modalCreative.classList.add('flex');
+    }
+
+    function openOfferModalForAdd() {
+      modalOfferTitle.textContent = 'Adicionar Oferta';
+      offerForm.reset();
+      currentOfferId = null;
+      deleteOfferBtn.classList.add('hidden');
+      modalOffer.classList.remove('hidden');
+      modalOffer.classList.add('flex');
+    }
+
+    function openOfferModalForEdit(id) {
+      const offer = db.offers.find(o => o.id === id);
+      if (!offer) return;
+
+      modalOfferTitle.textContent = 'Editar Oferta';
+      currentOfferId = id;
+      offerName.value = offer.name;
+      offerLink.value = offer.link;
+      deleteOfferBtn.classList.remove('hidden');
+      modalOffer.classList.remove('hidden');
+      modalOffer.classList.add('flex');
+    }
+
+    // --- Event Listeners ---
+
+    menuBtn.onclick = () => sidebar.classList.toggle('hidden');
+
+    sidebarButtons.forEach(button => {
+      button.onclick = () => showSection(button.dataset.section);
+    });
+
+    closeModalCreative.onclick = () => {
+      modalCreative.classList.add('hidden');
+      modalCreative.classList.remove('flex');
+    };
+
+    closeModalOffer.onclick = () => {
+      modalOffer.classList.add('hidden');
+      modalOffer.classList.remove('flex');
+    };
+
+    creativeForm.onsubmit = (e) => {
+      e.preventDefault();
+      const newCreative = {
+        id: currentCreativeId || crypto.randomUUID(),
+        name: formName.value,
+        status: formStatus.value,
+        offerId: formOffer.value,
+        ctr: parseFloat(formCTR.value) || 0,
+        cpm: parseFloat(formCPM.value) || 0,
+        cpc: parseFloat(formCPC.value) || 0,
+        ic: parseFloat(formIC.value) || 0,
+        sales: parseInt(formSales.value) || 0,
+        hook: formHook.value,
+        link: formLink.value,
+        notes: formNotes.value,
+      };
+
+      if (currentCreativeId) {
+        db.creatives = db.creatives.map(c => c.id === currentCreativeId ? newCreative : c);
+      } else {
+        db.creatives.push(newCreative);
+      }
+      saveDB();
+      updateUI();
+      closeModalCreative.click();
+    };
+
+    deleteCreativeBtn.onclick = () => {
+      if (currentCreativeId && confirm('Tem certeza que deseja excluir este criativo?')) {
+        db.creatives = db.creatives.filter(c => c.id !== currentCreativeId);
+        saveDB();
+        updateUI();
+        closeModalCreative.click();
+      }
+    };
+
+    offerForm.onsubmit = (e) => {
+      e.preventDefault();
+      const newOffer = {
+        id: currentOfferId || crypto.randomUUID(),
+        name: offerName.value,
+        link: offerLink.value,
+      };
+
+      if (currentOfferId) {
+        db.offers = db.offers.map(o => o.id === currentOfferId ? newOffer : o);
+      } else {
+        db.offers.push(newOffer);
+      }
+      saveDB();
+      updateUI();
+      closeModalOffer.click();
+    };
+
+    deleteOfferBtn.onclick = () => {
+      if (currentOfferId && confirm('Tem certeza que deseja excluir esta oferta? Todos os criativos associados a ela perderão a referência.')) {
+        db.offers = db.offers.filter(o => o.id !== currentOfferId);
+        // Optionally, update creatives that referenced this offer
+        db.creatives = db.creatives.map(c => {
+          if (c.offerId === currentOfferId) {
+            return { ...c, offerId: '' }; // Clear offerId if the offer is deleted
+          }
+          return c;
+        });
+        saveDB();
+        updateUI();
+        closeModalOffer.click();
+      }
+    };
+
+    filterOffer.onchange = renderAdsTable;
+    filterStatus.onchange = renderAdsTable;
+    clearFilters.onclick = () => {
+      filterOffer.value = '';
+      filterStatus.value = '';
+      searchInput.value = '';
+      renderAdsTable();
+    };
+
+    quickAddBtn.onclick = () => {
+      const name = quickName.value;
+      const status = quickStatus.value;
+      const offerId = quickOffer.value;
+
+      if (!name || !offerId) {
+        alert('Nome do criativo e oferta são obrigatórios para adição rápida.');
+        return;
+      }
+
+      const newCreative = {
+        id: crypto.randomUUID(),
+        name,
+        status,
+        offerId,
+        ctr: 0, cpm: 0, cpc: 0, ic: 0, sales: 0,
+        hook: '', link: '', notes: ''
+      };
+      db.creatives.push(newCreative);
+      saveDB();
+      quickName.value = '';
+      updateUI();
+    };
+
+    addOfferBtn.onclick = openOfferModalForAdd;
+    btnAddCreative.onclick = openCreativeModalForAdd;
+
+    resetBtn.onclick = () => {
+      if (confirm('Tem certeza que deseja resetar todos os dados? Esta ação é irreversível.')) {
+        localStorage.removeItem(DB_KEY);
+        db = { creatives: [], offers: [] };
+        updateUI();
+        alert('Dados resetados com sucesso!');
+      }
+    };
+
+    searchInput.oninput = renderAdsTable;
+
+    // Table sorting
+    $$('th[data-key]').forEach(th => {
+      th.onclick = () => {
+        const key = th.dataset.key;
+        let order = 'asc';
+        if (adsTable.dataset.sortKey === key) {
+          order = adsTable.dataset.sortOrder === 'asc' ? 'desc' : 'asc';
+        }
+        adsTable.dataset.sortKey = key;
+        adsTable.dataset.sortOrder = order;
+        renderAdsTable();
+      };
+    });
+
+    // Export/Import
+    exportBtn.onclick = () => {
+      const dataStr = JSON.stringify(db, null, 2);
+      const blob = new Blob([dataStr], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'creative_management_data.json';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    };
+
+    importFile.onchange = (e) => {
+      const file = e.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          try {
+            const importedData = JSON.parse(event.target.result);
+            if (importedData.creatives && importedData.offers) {
+              if (confirm('Importar dados substituirá os dados atuais. Continuar?')) {
+                db = importedData;
+                saveDB();
+                updateUI();
+                alert('Dados importados com sucesso!');
+              }
+            } else {
+              alert('Formato de arquivo JSON inválido. Esperado 
+
